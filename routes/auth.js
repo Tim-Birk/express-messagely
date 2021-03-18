@@ -11,11 +11,11 @@ const Message = require('./models/message');
  * Make sure to update their last-login!
  *
  **/
-router.post('/register', async function (req, res, next) {
+router.post('/login', async function (req, res, next) {
   try {
     const { username, password } = req.body;
 
-    // create user in the database
+    // get user from the database
     const user = await User.get(username);
 
     // log in user and return token
@@ -34,6 +34,7 @@ router.post('/register', async function (req, res, next) {
         return res.json({ token });
       }
     }
+    throw new ExpressError('Invalid user/password', 400);
   } catch (err) {
     return next(err);
   }
