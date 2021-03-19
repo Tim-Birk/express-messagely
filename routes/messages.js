@@ -1,10 +1,8 @@
 const express = require('express');
 const router = new express.Router();
 const ExpressError = require('../expressError');
-const { SECRET_KEY } = require('../config');
 
-const User = require('./models/user');
-const Message = require('./models/message');
+const Message = require('../models/message');
 const { ensureLoggedIn } = require('../middleware/auth');
 
 /** GET /:id - get detail of message.
@@ -33,14 +31,14 @@ router.post('/:id', ensureLoggedIn, async function (req, res, next) {
     ) {
       throw new ExpressError(
         'Only the users that are associated with this message can access it',
-        404
+        400
       );
     }
 
     if (!message) {
-      throw new ExpressError('Invalid message id', 404);
+      throw new ExpressError('Invalid message id', 400);
     }
-    return res.jsons(message);
+    return res.json(message);
   } catch (err) {
     return next(err);
   }
@@ -97,3 +95,5 @@ router.post('/:id/read', ensureLoggedIn, async function (req, res, next) {
     return next(err);
   }
 });
+
+module.exports = router;

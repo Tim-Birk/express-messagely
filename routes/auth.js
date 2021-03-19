@@ -1,10 +1,12 @@
 const express = require('express');
 const router = new express.Router();
 const ExpressError = require('../expressError');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const { SECRET_KEY } = require('../config');
+const db = require('../db');
 
-const User = require('./models/user');
-const Message = require('./models/message');
+const User = require('../models/user');
 
 /** POST /login - login: {username, password} => {token}
  *
@@ -14,20 +16,20 @@ const Message = require('./models/message');
 router.post('/login', async function (req, res, next) {
   try {
     const { username, password } = req.body;
+    const result = await db.query(
+      `SELECT password FROM users WHERE username = $1`,
+      [username]
+    );
+    const user = result.rows[0];
 
-    // get user from the database
-    const user = await User.get(username);
-
-    // log in user and return token
     if (user) {
       if ((await bcrypt.compare(password, user.password)) === true) {
         // update timestamp
-        await User.updateLoginTimestamp(user.username);
+        await User.updateLoginTimestamp(username);
         // sign token
         let token = jwt.sign(
           {
             username,
-            password,
           },
           SECRET_KEY
         );
@@ -48,16 +50,16 @@ router.post('/login', async function (req, res, next) {
  */
 router.post('/register', async function (req, res, next) {
   try {
-    const { username, password, firstName, lastName, phone } = req.body;
+    const { username, password, first_name, last_name, phone } = req.body;
 
     // create user in the database
-    const user = await User.register(
+    const user = await User.register({
       username,
       password,
-      firstName,
-      lastName,
-      phone
-    );
+      first_name,
+      last_name,
+      phone,
+    });
 
     // log in user and return token
     if (user) {
@@ -68,10 +70,6 @@ router.post('/register', async function (req, res, next) {
         let token = jwt.sign(
           {
             username,
-            password,
-            first_name: firstName,
-            last_name: lastName,
-            phone,
           },
           SECRET_KEY
         );
@@ -82,3 +80,5 @@ router.post('/register', async function (req, res, next) {
     return next(err);
   }
 });
+
+module.exports = router;
